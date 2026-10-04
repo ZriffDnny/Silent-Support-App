@@ -35,7 +35,7 @@ export default function PrivacyScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Privacy</Text>
-        <Text style={styles.updated}>Last updated: 4 June 2026</Text>
+        <Text style={styles.updated}>Last updated: 4 October 2026</Text>
 
         <P>
           Silent Support is a quiet place to check in with how you feel. This page explains, plainly,
@@ -54,11 +54,13 @@ export default function PrivacyScreen() {
         <Bullet>
           <Text style={styles.strong}>Your check-ins.</Text> The emotion you tap, and when. When you’re
           signed out, these are stored only on your device. (To write a response, the emotion you tapped
-          is sent to our AI service in the moment, and is not saved — see “The services we rely on”.)
+          and a support number from 1 to 3 pass through our server to our AI service in the moment. We
+          don’t save them; see “The services we rely on”.)
         </Bullet>
         <Bullet>
-          <Text style={styles.strong}>Your email.</Text> Only if you choose to create an account. We
-          use it to send your sign-in code and to back up your check-ins. There are no passwords.
+          <Text style={styles.strong}>Your email.</Text> Only if you choose to sign in. Asking for a
+          sign-in code creates your account, even if you don’t finish signing in. We use your email to
+          send that code and to back up your check-ins. There are no passwords.
         </Bullet>
         <P>We don’t ask for your name, age, location, contacts, or anything else.</P>
 
@@ -66,9 +68,7 @@ export default function PrivacyScreen() {
         <Bullet>To show your history, so you can look back gently.</Bullet>
         <Bullet>To keep it safe across your devices, only when you’re signed in.</Bullet>
         <P>We never use it to profile you or build a picture of who you are.</P>
-        <P>
-          Silent Support never knows why you chose an emotion. Only the emotion itself is processed.
-        </P>
+        <P>Silent Support never knows why you chose an emotion.</P>
 
         <H>Gentle patterns, only on your phone</H>
         <P>
@@ -84,9 +84,9 @@ export default function PrivacyScreen() {
 
         <H>Signed out vs signed in</H>
         <Bullet>
-          <Text style={styles.strong}>Signed out:</Text> nothing about you is stored on our servers, and
-          your history stays on your device. To write a response, the single emotion you tap is sent to
-          our AI service in the moment and never saved.
+          <Text style={styles.strong}>Signed out:</Text> no check-ins or account are stored on our
+          servers, and your history stays on your device. To write a response, the emotion you tap and a
+          support number from 1 to 3 are sent to our AI service in the moment. We don’t save them.
         </Bullet>
         <Bullet>
           <Text style={styles.strong}>Signed in:</Text> your check-ins are backed up to your private
@@ -96,40 +96,42 @@ export default function PrivacyScreen() {
         <H>The services we rely on</H>
         <P>We’re a small app and use a few trusted services to run:</P>
         <Bullet>
-          <Text style={styles.strong}>Supabase.</Text> Handles sign-in and stores signed-in users’
-          check-ins in a secure database. Each person’s data is locked to their own account.
+          <Text style={styles.strong}>Supabase.</Text> Handles sign-in, stores signed-in users’
+          check-ins in a secure database hosted in Japan, and runs the small server step that passes the
+          emotion you tap, and its support number, on to Groq without saving them. Each person’s
+          check-ins are locked to their own account.
         </Bullet>
         <Bullet>
-          <Text style={styles.strong}>SendGrid.</Text> Sends your sign-in code by email. It only
-          handles your email address to deliver that one message.
+          <Text style={styles.strong}>SendGrid.</Text> Sends your sign-in code by email. It receives
+          only your email address and the code, and keeps delivery records under its own policy.
         </Bullet>
         <Bullet>
-          <Text style={styles.strong}>Groq.</Text> Generates some supportive responses using AI. It
-          receives only two things: the single emotion you tapped (like “Lonely”), and a coarse
-          support-strength number from 1 to 3 that hints how much support to offer. That number is
-          worked out on your device — your history, counts, dates, and emotional patterns never leave
-          your phone. Groq never receives your email or anything that identifies you, and many responses
-          are pre-written and don’t use AI at all.
+          <Text style={styles.strong}>Groq.</Text> Writes some supportive responses using AI. Our
+          server sends Groq the emotion you tapped and a support number from 1 to 3 that hints how much
+          support to offer. That number is worked out on your phone. Your history, counts, dates, email,
+          account information, and IP address aren’t included in that request. Every response starts
+          with words we wrote; when you’re online, the app also asks Groq for a fresh version and shows
+          it only if it arrives quickly. Groq says it doesn’t keep these requests by default, but may
+          keep them for up to 30 days when it needs to fix errors or look into misuse. Its terms don’t
+          allow it to train AI models on them without our permission.
         </Bullet>
 
         <H>Technical basics</H>
         <P>
-          Like any app that connects to the internet, the services we rely on briefly see your device’s
-          IP address and the time of each request, in order to deliver a response. Silent Support does
-          not use this to track, profile, or build a picture of you.
-        </P>
-        <P>
-          Your phone’s app store may send anonymous crash reports (handled by Apple or Google, never an
-          analytics tool inside the app) to help us fix problems; you can turn this off in your device
-          settings.
+          Like any app that connects to the internet, the services we rely on can see your device’s IP
+          address (which can hint at your rough location), the time of each request, and basic technical
+          details about your device, so they can deliver a response. They may keep these in technical
+          logs for a limited time under their own policies. Your IP address isn’t included in the
+          requests our server sends to Groq. Silent Support doesn’t use any of this to track, profile, or
+          build a picture of you.
         </P>
 
         <H>Your data is yours, and locked to you</H>
         <P>
-          For signed-in users, every check-in is tied to your account, and only you can read it. No
-          other person, and no request without your sign-in, can reach it. We don’t read your
-          check-ins ourselves; they’re simply kept for you. This is enforced at the database level,
-          not just in the app.
+          For signed-in users, every check-in is tied to your account. Rules in the database itself, not
+          just in the app, stop other users and anyone who isn’t signed in as you from reaching it. As
+          the app’s maker we have administrator access to run the service, but we don’t read your
+          check-ins; they’re simply kept for you.
         </P>
 
         <H>Deleting your data</H>
@@ -144,6 +146,11 @@ export default function PrivacyScreen() {
           away, and clears them from this device. It can’t be undone. (Signing out instead just clears
           this device and keeps your check-ins safe in your account.)
         </Bullet>
+        <Bullet>
+          <Text style={styles.strong}>Started signing in but didn’t finish?</Text> An account may still
+          have been created for that email. Sign in once and tap Delete account, or email us and we’ll
+          remove it.
+        </Bullet>
 
         <H>How long we keep things</H>
         <Bullet>
@@ -157,12 +164,15 @@ export default function PrivacyScreen() {
         </Bullet>
         <Bullet>Deleting your account removes your account and every backed-up check-in.</Bullet>
         <Bullet>
-          The services we rely on may keep their own short-lived logs (for example, of sign-in emails or
-          logins) for a time, according to their own policies.
+          The services we rely on may keep their own records for a time, under their own policies: for
+          example, of sign-in emails, logins, and requests to our AI service.
         </Bullet>
 
         <H>What we don’t do</H>
-        <Bullet>We don’t sell or share your data with anyone.</Bullet>
+        <Bullet>
+          We don’t sell your data or share it for advertising. We only pass it to the services above so
+          they can run the app.
+        </Bullet>
         <Bullet>We don’t run ads.</Bullet>
         <Bullet>We don’t use tracking or analytics tools.</Bullet>
         <Bullet>We don’t have social features or anything public.</Bullet>

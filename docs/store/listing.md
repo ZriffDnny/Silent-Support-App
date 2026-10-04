@@ -32,7 +32,7 @@ Alternatives:
 
 ## Short description (Play, ≤80)
 
-**`Tap how you feel and get a calm, private response. No accounts, no tracking.`** — 76 ✅
+**`Tap how you feel and get a calm, private response. No account required.`** — 71 ✅
 
 Alternative: `A quiet emotional check-in. One tap, a calm reply, and total privacy.` — 69
 
@@ -58,8 +58,8 @@ PRIVATE BY DESIGN
 • Works without an account — your check-ins are stored only on your phone.
 • Optional free backup with just your email and a sign-in code (no passwords).
 • Your check-ins are yours alone, locked to your account, and deletable anytime.
-• To write a response, only the single emotion you tapped — and a coarse 1–3 sense of how much support to offer — is sent to our AI service. Your history, counts, dates, identity, and the reason behind a feeling never leave your phone.
-• Silent Support never knows why you chose an emotion. Only the emotion itself is processed.
+• To write a response, only the emotion you tapped and a coarse 1–3 sense of how much support to offer are sent to our AI service, through our server. Your history, counts, dates, identity, and the reason behind a feeling are never sent to it.
+• Silent Support never knows why you chose an emotion.
 
 GENTLE, NOT CLINICAL
 A companion for everyday feelings — not a coach, not a tracker that nags, not a service that scores you. No streaks, no badges, no guilt-trip notifications. Just a moment of calm, whenever you need one.
@@ -96,16 +96,21 @@ mood,feelings,emotions,check-in,calm,breathe,journal,diary,selfcare,mindful,priv
 
 Accurate claims (consistent with `app/privacy.tsx`):
 - No advertising, tracking, or analytics SDKs (verified — none in the codebase).
-- Signed out: check-ins are stored only on the device; nothing about you is stored on our servers.
-- The tapped emotion + a coarse 1–3 support level are sent to the AI provider to generate a
-  response — **processed, not stored**; no history, identity, or reason is sent.
-- Account is optional (email + one-time code, no passwords); account data is owner-locked at the
-  database level and fully deletable in-app.
-- Emotional data is never sold, shared, or used to profile.
+- Signed out: check-ins are stored only on the device; no check-ins or account are stored on our
+  servers.
+- Signed in (optional): the email and the check-ins (emotion + time) are stored in the account for
+  backup and sync. Account data is owner-locked at the database level and fully deletable in-app
+  (email + one-time code, no passwords).
+- Every user, signed in or not: the tapped emotion + a coarse 1–3 support level are sent through our
+  server to the AI provider (Groq) to generate a response. Our code doesn't store them. Groq says it
+  doesn't retain them by default but may keep them up to 30 days for troubleshooting or abuse checks.
+  No history, identity, or reason is sent.
+- Emotional data is never sold, shared for advertising, or used to profile.
 
-**Do NOT claim:** "fully offline", "nothing ever leaves your device", or "no data collected" without
-qualification (an account collects email + check-ins for functionality, and the AI call transmits the
-tapped emotion). See the Privacy Label / Data Safety checklists for the exact label setup.
+**Do NOT claim:** "fully offline", "nothing ever leaves your device", "never stored anywhere", or "no
+data collected" without qualification (an account collects email + check-ins for functionality, the AI
+call transmits the tapped emotion + the 1–3 level, and the services log network metadata such as IP
+addresses). See the Privacy Label / Data Safety checklists for the exact label setup.
 
 ## Competitive positioning
 

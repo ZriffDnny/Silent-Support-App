@@ -92,9 +92,11 @@ All styling pulls from `src/theme` (`colors`, `typography`) — no hardcoded col
 
 **Silent Support does not include analytics by design.** Analytics is a *forbidden layer*, not an
 unbuilt feature — there is no local or remote metrics system, and none may be added. **All behavioral
-signals are either local UI features or non-existent**: `computeStrength`, `deriveMemory`,
-`computeStrain`, and history `insights` are computed on-device, shown to the user, and never logged,
-exported, or transmitted; there is no third category. No analytics/attribution/ads/crash SDKs, no
+signals are either local UI features or non-existent**: `deriveMemory`, `computeStrain`, and history
+`insights` are computed on-device, shown to the user, and never logged, exported, or transmitted.
+`computeStrength` is computed on-device and never shown; only its coarse 1–3 level leaves the phone,
+with the emotion id, in the transient AI request, which our code never stores. There is no third
+category. No analytics/attribution/ads/crash SDKs, no
 telemetry endpoints, no event/session/usage logging (local or remote), no identifiers in any log or
 request. The single external touchpoint is OS-level, tester-consented platform crash reporting
 (TestFlight / Play Vitals) — never an in-app SDK. **The server-side `emotion_logs` backup must NEVER

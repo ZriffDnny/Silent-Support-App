@@ -133,8 +133,8 @@ export default function SignInScreen() {
               </Text>
             </Pressable>
             <Text style={styles.note}>
-              Your email is only used to sign you in, and is sent securely through our authentication
-              provider. Your check-ins stay private to you.
+              Your email is used to sign you in and manage your account, and is sent securely through
+              our authentication provider. Your check-ins stay private to you.
             </Text>
           </>
         ) : (

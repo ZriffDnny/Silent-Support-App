@@ -55,20 +55,32 @@ Set this to match `app/privacy.tsx` exactly — under-claiming is safer than ove
 - [ ] **Data linked to you (App Functionality only), applies when a user creates an account:**
   - [ ] Contact Info → **Email address** (sign-in + backup).
   - [ ] User Content → **the emotion check-ins** (the user's backup).
-- [ ] **Signed-out users:** no data collected/stored server-side (history is on-device).
-- [ ] Disclose the AI processing: the tapped emotion + a coarse 1–3 support level are sent to a
-      third-party AI provider (Groq) for functionality, **not stored**, not linked to identity.
-- [ ] Diagnostics / Identifiers / Usage Data / Location: **none collected**.
+- [ ] **Signed-out users:** no account or check-ins stored server-side (history is on-device). The
+      tapped emotion + a coarse 1–3 support level are still transmitted for the AI response.
+- [ ] Disclose the AI processing: the tapped emotion + a coarse 1–3 support level are sent through our
+      server to a third-party AI provider (Groq) for functionality, not linked to identity, and not
+      stored by our code. Groq says it doesn't retain them by default but may keep them up to 30 days
+      for troubleshooting or abuse checks. Re-check Apple's definition of "collected" before answering.
+- [ ] Diagnostics / Identifiers / Usage Data: none collected by the app.
+- [ ] **Location: decide.** The app never requests or infers location, but Supabase's request logs
+      record an IP-derived city.
 - [ ] Not used for third-party advertising or developer marketing.
 - [ ] "Data is deletable" → YES (account deletion + clear history).
 
 ## Data Safety checklist (Google Play)
 
-- [ ] **Does the app collect or share user data?** Yes (only with an account), collect-only — no sharing.
-- [ ] Data types: **Personal info → Email address** (account), **App activity / Other → emotion
-      check-ins** (account backup). Purpose: **App functionality** only.
-- [ ] **Data shared with third parties:** none for ads/analytics. Note the AI provider processes the
-      tapped emotion + 1–3 level for functionality (transient processing, not a data sale).
+- [ ] **Does the app collect or share user data?** Collect: yes (Google: "Collect" means transmitting
+      data off the device). Share: no. Supabase, Groq and SendGrid process data on our behalf as
+      service providers, which Google doesn't count as "sharing".
+- [ ] Data types: **Personal info → Email address** (account) and the **emotion check-ins** (account
+      backup). Decide "Health info" vs "App activity → Other user-generated content"; Google's
+      definitions don't settle it. Purpose: **App functionality** only.
+- [ ] **All users, signed in or not:** the tapped emotion + a coarse 1–3 level are transmitted for the
+      AI reply. Our code processes them ephemerally. Include them in the form: Google hides
+      ephemerally processed data from the listing only if it meets its standard, and Groq's possible
+      30-day troubleshooting/abuse logs make that a judgment call.
+- [ ] **Approximate location: decide.** Google says IP-inferred location must be disclosed. The app
+      never infers location, but Supabase's request logs record a city.
 - [ ] **Is data encrypted in transit?** Yes (HTTPS).
 - [ ] **Can users request deletion?** Yes — in-app (Settings → Account → Delete account) and via a
       stated request method.

@@ -119,7 +119,7 @@ This is an emotional mirror, **not** a health tracker — no charts, scores, dia
 
 Privacy is the product, not a setting.
 
-- **Local-first.** Your emotion history lives on your device. Signed out, nothing about you is stored on any server; to write a response, only the feeling you tapped and a 1-to-3 depth number are sent in the moment, and not kept.
+- **Local-first.** Your emotion history lives on your device. Signed out, no check-ins or account are stored on any server; to write a response, only the feeling you tapped and a 1-to-3 depth number pass through our server to the AI provider, and we don't keep them.
 - **Accounts are optional.** Create one only if you want to back up and sync across devices. Sign-in is a simple emailed code — no password, no magic link.
 - **You own your data.** Clear your history any time, or delete your account entirely (which erases your data from the server).
 - **No tracking.** No third-party analytics SDKs.

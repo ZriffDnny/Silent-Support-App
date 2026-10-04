@@ -45,7 +45,9 @@ Treat it as the highest-severity violation.
 - **Event streams / timelines:** no per-tap events, no "emotion X at time T," no navigation paths,
   no screen-view tracking, no funnels, no clickstreams.
 - **Emotional content as data:** never log or transmit the tapped emotion, the curated/AI response
-  text, or any `strength` / `memory` / `strain` value tied to a user or a time.
+  text, or any `strength` / `memory` / `strain` value tied to a user or a time. The one exception is
+  the transient AI request (emotion id + coarse 1–3 strength, no identity), which is functionality,
+  not analytics, and which our code never stores.
 - **Session analytics:** no session counts, durations, frequency, retention, cohorts, DAU/MAU.
 - **Remote telemetry:** no analytics / attribution / heartbeat endpoints, no beacons or pixels, no
   remote logging service, no "phone-home" pings.
@@ -63,10 +65,12 @@ Treat it as the highest-severity violation.
 
 ## What is allowed (and is explicitly NOT analytics)
 
-- **On-device, user-facing derived signals.** `computeStrength`, `deriveMemory`, `computeStrain`,
-  and the history `insights` read local history, are **shown to the user as features**, and never
-  leave the device. They are product behavior, not analytics. Constraint: they must stay that way —
-  never written to a log/file, never attached to a network request, never exported silently.
+- **On-device, user-facing derived signals.** `deriveMemory`, `computeStrain`, and the history
+  `insights` read local history, are **shown to the user as features**, and never leave the device.
+  `computeStrength` reads the same history and is never shown; only its coarse 1–3 level goes out
+  with the AI request above. They are product behavior, not analytics. Constraint: they must stay
+  that way — never written to a log/file, never attached to any other network request, never
+  exported silently.
 - **Per-user functionality on the server:** the user's own sync/restore, Clear History, and account
   deletion. Never aggregation.
 
