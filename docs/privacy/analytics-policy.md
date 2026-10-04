@@ -29,7 +29,10 @@ not strength/strain distributions, not retention, not "anonymized" rollups.
   not permission. Doing so would directly break *"We don't read your check-ins"* and *"never use it
   to profile you."*
 - The only legitimate server-side touch of `emotion_logs` is per-user functionality: the user's own
-  sync/restore, and account deletion (cascade). Nothing else.
+  sync/restore, the user's own Clear History (`clear_history`, which also records the cleared ids in
+  `private.emotion_log_tombstones`), and account deletion (cascade). Nothing else. The tombstone
+  table follows the same rule: it is never queried, counted, or aggregated for developer insight;
+  only that function and its insert guard use it.
 
 This is the most likely way the project could backslide into surveillance **without any SDK at all.**
 Treat it as the highest-severity violation.
@@ -64,8 +67,8 @@ Treat it as the highest-severity violation.
   and the history `insights` read local history, are **shown to the user as features**, and never
   leave the device. They are product behavior, not analytics. Constraint: they must stay that way —
   never written to a log/file, never attached to a network request, never exported silently.
-- **Per-user functionality on the server:** the user's own sync/restore and account deletion. Never
-  aggregation.
+- **Per-user functionality on the server:** the user's own sync/restore, Clear History, and account
+  deletion. Never aggregation.
 
 > Summary: **all behavioral signals are either local UI features or non-existent.** There is no third
 > category.

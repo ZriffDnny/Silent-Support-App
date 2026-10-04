@@ -37,7 +37,7 @@ before a build can be submitted.
 - [ ] Category **Health & Fitness**; tags self-care / mindfulness.
 - [ ] Content rating (IARC) questionnaire completed.
 - [ ] Phone screenshots (≥2) + 1024×500 feature graphic + 512×512 hi-res icon.
-- [ ] Adaptive icon present (`assets/android_adaptive_foreground.png`, transparent mark, bg `#0E0F1A`) — confirmed in `app.json`; the splash mark (`assets/splash-mark.png`) is set via the expo-splash-screen plugin.
+- [ ] Adaptive icon present (`assets/android_icon.png`, bg `#0E0F1A`) — confirmed in `app.json`.
 - [ ] Privacy Policy URL set.
 - [ ] **Data Safety** form completed (see Data Safety checklist).
 - [ ] Health apps declaration: confirm it is **not** a medical device / does not provide diagnosis

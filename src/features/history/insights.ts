@@ -19,20 +19,6 @@ function bucketOfHour(h: number): Bucket {
   return 'night';
 }
 
-export type DayPart = Bucket;
-
-/** The part of the day a check-in happened, as a word: how a memory is kept, not a log. */
-export function dayPart(iso: string): string {
-  return DAY_PART_LABEL[bucketOfHour(new Date(iso).getHours())];
-}
-
-const DAY_PART_LABEL: Record<Bucket, string> = {
-  morning: 'morning',
-  afternoon: 'afternoon',
-  evening: 'evening',
-  night: 'late night',
-};
-
 const BUCKET_PHRASE: Record<Bucket, string> = {
   morning: 'Mornings',
   afternoon: 'Afternoons',
@@ -60,7 +46,7 @@ export function buildInsights(logs: LocalLog[], nowMs: number): string[] {
 
   const recent = recentLogs(logs, nowMs);
   // A light week falls back to the whole record — and says so, rather than
-  // calling two-month-old feelings "lately".
+  // calling months-old feelings "lately".
   const lately = recent.length >= 3;
   const sample = lately ? recent : logs;
   const out: string[] = [];
@@ -89,6 +75,11 @@ export function buildInsights(logs: LocalLog[], nowMs: number): string[] {
   if (counts[0] && counts[0].count >= 2) {
     const label = getEmotion(counts[0].emotion)?.label ?? counts[0].emotion;
     out.push(`${lately ? 'Lately' : 'Over time'}, “${label}” has come up the most.`);
+  }
+
+  // Presence — gentle acknowledgement of showing up.
+  if (recent.length >= 1) {
+    out.push(`You’ve checked in ${recent.length} ${recent.length === 1 ? 'time' : 'times'} this week.`);
   }
 
   return out.slice(0, 2);

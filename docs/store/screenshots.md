@@ -1,14 +1,14 @@
 # Silent Support — Screenshot Plan
 
-Six portrait screenshots (dark theme — `#0E0F1A` canvas, Literata headlines mirroring the in-app
+Six portrait screenshots (dark theme — `#0E0F1A` canvas, serif headlines mirroring the in-app
 typography). Each panel pairs a real screen with one short overlay headline + subheadline. Keep
 overlays calm and claim-free: companion, never therapy/treatment/diagnosis.
 
 **Visual system (all panels)**
-- Background: app canvas `#0E0F1A`; ink `#ECE7DC` (primary), `#7E7B88` (muted).
-- Headline: Literata Light, large, top third. Subheadline: Literata, muted, directly beneath.
+- Background: app canvas `#0E0F1A`; ink `#E8E5DC` (primary), `#81818F` (muted).
+- Headline: serif (Georgia), large, top third. Subheadline: sans, muted, directly beneath.
 - Show the real device frame; avoid clutter, avoid fake data that implies distress severity.
-- No accent colour: the only "colour" is the app's soft moon light (`#C9D4F0` at low opacity) under a feeling — no gradients, no chips, no emoji.
+- One accent only (`#7C8BB3` whisper blue) — no loud gradients, matching the app's restraint.
 
 ---
 
@@ -16,8 +16,8 @@ overlays calm and claim-free: companion, never therapy/treatment/diagnosis.
 - **Purpose:** show the core action instantly — tap a feeling, nothing to type.
 - **Headline:** How are you feeling?
 - **Subheadline:** No need to explain. Just choose.
-- **Composition:** Home screen (`app/index.tsx`) with the field of eight words centered, one resting
-  in its pool of light; headline overlaid above the field. Calm, generous spacing. This is the first impression — lead with it.
+- **Composition:** Home screen (`app/index.tsx`) with the emotion grid centered; headline overlaid
+  above the grid. Calm, generous spacing. This is the first impression — lead with it.
 
 ## 2. The calm response
 - **Purpose:** show that comfort arrives the moment you tap — presence, not a chatbot.
@@ -44,15 +44,15 @@ overlays calm and claim-free: companion, never therapy/treatment/diagnosis.
 - **Purpose:** show the private look-back without implying analytics or scoring.
 - **Headline:** Look back, gently.
 - **Subheadline:** A private record, just for you.
-- **Composition:** History screen (`app/history.tsx`) with two reflection sentences and a few days of
-  check-ins (feeling + part of day). Include the bottom line "Kept only on this phone." in-frame if
-  it reads cleanly.
+- **Composition:** History screen (`app/history.tsx`) with a few grouped check-ins and the soft
+  "Looking back" reflections card. Include the caption "These notes are worked out on your phone
+  and never leave it." in-frame if it reads cleanly.
 
 ## 6. Help is always there
 - **Purpose:** reassure that support resources are one tap away (non-clinical framing).
 - **Headline:** Help is always one tap away.
 - **Subheadline:** Support resources, whenever it's heavy.
-- **Composition:** Help screen (`app/help.tsx`) showing the list of lines. Do not imply the app detects
+- **Composition:** Help screen (`app/help.tsx`) showing resource cards. Do not imply the app detects
   or diagnoses crisis — frame as always-available resources.
 
 ---

@@ -1,19 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, View, StyleSheet } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { space } from '../src/theme';
-import { getEmotion } from '../src/emotions/catalog';
+import { theme } from '../src/theme';
+import { EMOTIONS, getEmotion, type EmotionId } from '../src/emotions/catalog';
 import { getLocalLogs, clearLocalLogs, type LocalLog } from '../src/lib/localHistory';
-import { clearServerHistory } from '../src/lib/sync';
+import { clearAccountHistory } from '../src/lib/sync';
 import { useSession } from '../src/features/auth/SessionProvider';
-import { buildInsights, dayPart } from '../src/features/history/insights';
-import { Screen } from '../src/ui/Screen';
-import { T } from '../src/ui/T';
-import { Action } from '../src/ui/Action';
-import { Hairline } from '../src/ui/Hairline';
+import { supabase } from '../src/lib/supabase';
+import { buildInsights, countByEmotion, recentLogs } from '../src/features/history/insights';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function startOfDay(ms: number): number {
   const d = new Date(ms);
@@ -27,8 +25,18 @@ function relativeDay(iso: string, nowMs: number): string {
   if (diff <= 0) return 'Today';
   if (diff === 1) return 'Yesterday';
   if (diff < 7) return DAYS[d.getDay()];
-  const year = d.getFullYear() !== new Date(nowMs).getFullYear() ? ` ${d.getFullYear()}` : '';
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}${year}`;
+  const year = d.getFullYear() !== new Date(nowMs).getFullYear() ? `, ${d.getFullYear()}` : '';
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}${year}`;
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  let h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m.toString().padStart(2, '0')} ${ampm}`;
 }
 
 type DayGroup = { key: number; label: string; items: LocalLog[] };
@@ -44,15 +52,12 @@ function groupByDay(logs: LocalLog[], nowMs: number): DayGroup[] {
   return groups;
 }
 
-/**
- * A gentle record, read like a page: the reflections as sentences, then the
- * days. No counts, no filters, no charts. Account controls live in Settings.
- */
 export default function HistoryScreen() {
   const router = useRouter();
-  const { userId, syncing, loading } = useSession();
+  const { session, userId, syncing, loading } = useSession();
   const [logs, setLogs] = useState<LocalLog[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [filter, setFilter] = useState<EmotionId | 'all'>('all');
 
   const load = useCallback(async () => {
     const ls = await getLocalLogs(userId);
@@ -76,7 +81,19 @@ export default function HistoryScreen() {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
   const insights = buildInsights(logs, nowMs);
-  const groups = groupByDay(sorted, nowMs);
+  const weekly = countByEmotion(recentLogs(logs, nowMs));
+  const filtered = filter === 'all' ? sorted : sorted.filter((l) => l.emotion === filter);
+  const groups = groupByDay(filtered, nowMs);
+
+  const signOut = async () => {
+    const uid = userId;
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      Alert.alert('Couldn’t sign out', 'We couldn’t sign you out just now. Try again in a moment.');
+      return;
+    }
+    if (uid) await clearLocalLogs(uid);
+  };
 
   const confirmClear = () => {
     const signedIn = !!userId;
@@ -92,12 +109,21 @@ export default function HistoryScreen() {
           style: 'destructive',
           onPress: async () => {
             if (signedIn && userId) {
-              await clearServerHistory(userId);
-              await clearLocalLogs(userId);
+              // The phone is only cleared once the account clear succeeded.
+              if (!(await clearAccountHistory(userId))) {
+                Alert.alert(
+                  'Couldn’t clear history',
+                  'We couldn’t clear your history just now. Try again in a moment.',
+                );
+                return;
+              }
+              // Reload rather than empty: a check-in saved during the clear stays.
+              await load();
             } else {
               await clearLocalLogs(null);
+              setLogs([]);
             }
-            setLogs([]);
+            setFilter('all');
           },
         },
       ],
@@ -106,137 +132,352 @@ export default function HistoryScreen() {
 
   const restoring = !!userId && syncing && logs.length === 0;
   // While auth is still resolving (or the first load hasn't finished), show a
-  // neutral quiet — never the signed-out prompt, and never a footer that then
-  // jumps down.
+  // neutral loading state — never the signed-out "sign in" prompt.
   const showLoading = loading || !loaded || restoring;
   const isEmpty = !showLoading && logs.length === 0;
 
   return (
-    <Screen back title="Looking back">
-      {showLoading ? (
-        restoring ? (
-          <T role="body" tone="ink2">
-            Bringing your check-ins back…
-          </T>
-        ) : null
-      ) : isEmpty ? (
-        <View style={styles.empty}>
-          <T role="voice">Nothing here yet.</T>
-          <T role="body" tone="ink2" style={styles.emptyHint}>
-            Whenever you tap how you feel, it’ll appear here, just for you.
-          </T>
-          {!userId ? (
-            <>
-              <T role="body" tone="ink2" style={styles.emptyHint}>
-                If you’ve kept a copy before, sign in to see it here.
-              </T>
-              <Action label="Sign in" onPress={() => router.push('/sign-in')} style={styles.emptyAction} />
-            </>
-          ) : null}
-        </View>
-      ) : (
-        <>
-          {insights.length > 0 ? (
-            <View>
-              {insights.map((line, i) => (
-                <T key={i} role="voice" style={i > 0 ? styles.reflection : undefined}>
-                  {line}
-                </T>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.topBar}>
+        <Pressable onPress={() => router.back()} hitSlop={16} accessibilityLabel="Back">
+          <Text style={styles.back}>‹ Back</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Looking back</Text>
+        <Text style={styles.subtitle}>A gentle record of how you’ve felt.</Text>
+
+        {/* Backup nudge — only signed-out, only when there's something to protect */}
+        {!loading && !userId && logs.length > 0 && (
+          <View style={styles.banner}>
+            <Text style={styles.bannerText}>Your check-ins are saved only on this phone.</Text>
+            <Pressable onPress={() => router.push('/sign-in')} hitSlop={8}>
+              <Text style={styles.bannerAction}>Back up</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {showLoading ? (
+          <View style={styles.empty}>
+            {restoring ? (
+              <Text style={styles.emptyHint}>Bringing your check-ins back…</Text>
+            ) : null}
+          </View>
+        ) : isEmpty ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>Nothing here yet.</Text>
+            <Text style={styles.emptyHint}>
+              Whenever you tap how you feel, it’ll quietly appear here, just for you.
+            </Text>
+            {!userId && (
+              <Pressable onPress={() => router.push('/sign-in')} hitSlop={10} style={styles.emptySignIn}>
+                <Text style={styles.signInLink}>Have an account? Sign in to bring your check-ins back.</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : (
+          <>
+            {insights.length > 0 && (
+              <>
+                <Text style={styles.insightsCaption}>
+                  These notes are worked out on your phone and never leave it.
+                </Text>
+                <View style={styles.card}>
+                  {insights.map((line, i) => (
+                    <Text key={i} style={styles.insight}>
+                      {line}
+                    </Text>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {weekly.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Lately</Text>
+                <Text style={styles.sectionHint}>Past 7 days</Text>
+                <View style={styles.pills}>
+                  {weekly.map(({ emotion, count }) => {
+                    const e = getEmotion(emotion);
+                    return (
+                      <View key={emotion} style={styles.pill}>
+                        <Text style={styles.pillEmoji}>{e?.emoji ?? '•'}</Text>
+                        <Text style={styles.pillCount}>{count}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chips}
+            >
+              <Chip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
+              {EMOTIONS.map((e) => (
+                <Chip
+                  key={e.id}
+                  label={e.emoji}
+                  active={filter === e.id}
+                  onPress={() => setFilter(e.id)}
+                />
               ))}
-              <Hairline />
-            </View>
-          ) : null}
+            </ScrollView>
 
-          {groups.map((group) => (
-            <View key={group.key} style={styles.group} accessibilityRole="list">
-              <T role="label" tone="ink2" accessibilityRole="header" style={styles.day}>
-                {group.label}
-              </T>
-              {group.items.map((log) => {
-                const e = getEmotion(log.emotion);
-                const when = dayPart(log.createdAt);
-                return (
-                  <View
-                    key={log.id}
-                    style={styles.row}
-                    accessible
-                    accessibilityLabel={`${e?.label ?? log.emotion}, ${when}`}
-                  >
-                    <T role="label" tone="ink">
-                      {e?.label ?? log.emotion}
-                    </T>
-                    <T role="whisper" tone="ink3">
-                      {when}
-                    </T>
-                  </View>
-                );
-              })}
-            </View>
-          ))}
+            {groups.length === 0 ? (
+              <Text style={styles.noneForFilter}>Nothing here for that feeling yet.</Text>
+            ) : (
+              groups.map((group) => (
+                <View key={group.key} style={styles.group}>
+                  <Text style={styles.dayLabel}>{group.label}</Text>
+                  {group.items.map((log) => {
+                    const e = getEmotion(log.emotion);
+                    return (
+                      <View key={log.id} style={styles.row}>
+                        <Text style={styles.rowEmoji}>{e?.emoji ?? '•'}</Text>
+                        <Text style={styles.rowLabel}>{e?.label ?? log.emotion}</Text>
+                        <Text style={styles.rowTime}>{formatTime(log.createdAt)}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ))
+            )}
 
-          <Action
-            label={userId ? 'Clear history' : 'Clear history on this device'}
-            kind="destructive"
-            onPress={confirmClear}
-            style={styles.clear}
-          />
-        </>
-      )}
+            <Pressable onPress={confirmClear} hitSlop={12} style={styles.clear}>
+              <Text style={styles.clearText}>
+                {userId ? 'Clear history on all devices' : 'Clear history on this device'}
+              </Text>
+            </Pressable>
+          </>
+        )}
 
-      {!showLoading ? (
-        <View style={styles.foot}>
-          <Hairline />
-          <T role="whisper" tone="ink3">
-            {userId
-              ? 'Backed up to your account. Reflections are worked out on this phone.'
-              : 'Kept only on this phone.'}
-          </T>
-          {!userId && logs.length > 0 ? (
-            <Action
-              label="Keep a copy"
-              onPress={() => router.push('/sign-in')}
-              accessibilityLabel="Keep a copy. Sign in with your email"
-              style={styles.footAction}
-            />
-          ) : null}
-        </View>
-      ) : null}
-    </Screen>
+        {/* Account controls — hidden until auth resolves to avoid a flash */}
+        {!loading && (
+          <View style={styles.account}>
+            {userId ? (
+              <>
+                <Text style={styles.accountText}>
+                  Signed in as {session?.user?.email ?? 'your account'}
+                </Text>
+                <Pressable onPress={signOut} hitSlop={10}>
+                  <Text style={styles.accountAction}>Sign out</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable onPress={() => router.push('/sign-in')} hitSlop={10}>
+                <Text style={styles.accountAction}>Sign in or back up</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.chip, active && styles.chipActive]}
+      accessibilityLabel={`Filter: ${label}`}
+    >
+      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  empty: {
-    marginTop: space.xl,
+  safe: { flex: 1, backgroundColor: theme.colors.canvas },
+  topBar: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+  back: {
+    color: theme.colors.inkSecondary,
+    fontSize: theme.typography.size.ui,
+    fontFamily: theme.typography.family.sans,
+  },
+  scroll: { paddingHorizontal: 20, paddingBottom: 48 },
+  title: {
+    color: theme.colors.inkPrimary,
+    fontSize: theme.typography.size.greeting,
+    fontFamily: theme.typography.family.serif,
+    marginTop: 12,
+  },
+  subtitle: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+    marginTop: 6,
+    marginBottom: 24,
+  },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  bannerText: {
+    color: theme.colors.inkSecondary,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+  },
+  bannerAction: {
+    color: theme.colors.accentWhisper,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+  },
+  empty: { marginTop: 60, alignItems: 'center', gap: 10 },
+  emptyText: {
+    color: theme.colors.inkSecondary,
+    fontSize: theme.typography.size.response,
+    fontFamily: theme.typography.family.serif,
   },
   emptyHint: {
-    marginTop: space.s,
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
-  emptyAction: {
-    marginTop: space.m,
+  emptySignIn: { marginTop: 14 },
+  signInLink: {
+    color: theme.colors.accentWhisper,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+    textAlign: 'center',
   },
-  reflection: {
-    marginTop: space.m,
+  insightsCaption: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.caption,
+    fontFamily: theme.typography.family.sans,
+    marginBottom: 10,
   },
-  group: {
-    marginBottom: space.l,
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: 20,
+    gap: 12,
+    marginBottom: 24,
   },
-  day: {
-    marginBottom: space.hair,
+  insight: {
+    color: theme.colors.inkPrimary,
+    fontSize: theme.typography.size.ui,
+    lineHeight: 26,
+    fontFamily: theme.typography.family.serif,
+  },
+  section: { marginBottom: 24 },
+  sectionTitle: {
+    color: theme.colors.inkSecondary,
+    fontSize: theme.typography.size.ui,
+    fontFamily: theme.typography.family.sans,
+  },
+  sectionHint: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.caption,
+    fontFamily: theme.typography.family.sans,
+    marginTop: 2,
+    marginBottom: 12,
+  },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  pillEmoji: { fontSize: 18 },
+  pillCount: {
+    color: theme.colors.inkSecondary,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+  },
+  chips: { gap: 8, paddingVertical: 4, marginBottom: 20 },
+  chip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.surfaceHigh,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    minWidth: 44,
+    alignItems: 'center',
+  },
+  chipActive: {
+    backgroundColor: theme.colors.surfaceHigh,
+    borderColor: theme.colors.accentWhisper,
+  },
+  chipText: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+  },
+  chipTextActive: { color: theme.colors.inkPrimary },
+  group: { marginBottom: 20 },
+  dayLabel: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.caption,
+    fontFamily: theme.typography.family.sans,
+    letterSpacing: 0.5,
+    marginBottom: 10,
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: space.s,
-    paddingVertical: space.s,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.surface,
   },
-  clear: {
-    marginTop: space.l,
+  rowEmoji: { fontSize: 22, marginRight: 14 },
+  rowLabel: {
+    flex: 1,
+    color: theme.colors.inkPrimary,
+    fontSize: theme.typography.size.ui,
+    fontFamily: theme.typography.family.sans,
   },
-  foot: {
-    marginTop: space.l,
+  rowTime: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.caption,
+    fontFamily: theme.typography.family.sans,
   },
-  footAction: {
-    marginTop: space.xs,
+  noneForFilter: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  clear: { marginTop: 24, alignItems: 'center', paddingVertical: 12 },
+  clearText: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.caption,
+    fontFamily: theme.typography.family.sans,
+  },
+  account: {
+    marginTop: 28,
+    paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.surface,
+    alignItems: 'center',
+    gap: 8,
+  },
+  accountText: {
+    color: theme.colors.inkTertiary,
+    fontSize: theme.typography.size.caption,
+    fontFamily: theme.typography.family.sans,
+  },
+  accountAction: {
+    color: theme.colors.accentWhisper,
+    fontSize: theme.typography.size.body,
+    fontFamily: theme.typography.family.sans,
   },
 });

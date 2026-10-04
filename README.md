@@ -22,16 +22,14 @@ One tap is enough.
 
 You select how you feel:
 
-- Bad day
-- Feeling low
-- Exhausted
-- Overthinking
-- Need comfort
-- Need encouragement
-- Lonely
-- Anxiety spike
-
-Eight words, no icons: each rests in a soft pool of light that gathers under your finger.
+- 😔 Bad Day
+- 🌧 Feeling Low
+- 😴 Emotionally Exhausted
+- 💭 Overthinking
+- 🫂 Need Comfort
+- 🌱 Need Encouragement
+- ❤️ Lonely
+- ⚡ Anxiety Spike
 
 The app responds with:
 
@@ -97,7 +95,7 @@ Just a steady presence.
 
 A dedicated calm screen with:
 
-- A breathing light (inhale · hold · exhale): the room itself breathes, no orb, no disc
+- Breathing animation (inhale · hold · exhale)
 - Grounding prompts
 - Optional ambient sound
 - Silence mode (one tap strips everything away but the breath)
@@ -109,10 +107,11 @@ A dedicated calm screen with:
 
 A soft, private record of how you’ve felt:
 
-- What you felt and roughly when (morning, evening, late night)
-- At most two light, rule-based reflections, written as sentences
+- What you felt and when
+- A gentle “lately” summary and light, rule-based reflections
+- Filter by feeling
 
-This is an emotional mirror, **not** a health tracker — no charts, counts, filters, scores, diagnoses, or labels.
+This is an emotional mirror, **not** a health tracker — no charts, scores, diagnoses, or labels.
 
 ---
 

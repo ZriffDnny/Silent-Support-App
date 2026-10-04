@@ -36,6 +36,9 @@ let fading = false;
 let fadeMs = 0;
 let gen = 0;
 let rampTimer: ReturnType<typeof setInterval> | null = null;
+// The in-flight ramp's resolver. A cancelled ramp must still settle, so that
+// whoever awaited it (a fade-out waiting to release its players) carries on.
+let rampDone: (() => void) | null = null;
 
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
 
@@ -44,9 +47,14 @@ function cancelRamp() {
     clearInterval(rampTimer);
     rampTimer = null;
   }
+  if (rampDone) {
+    const done = rampDone;
+    rampDone = null;
+    done();
+  }
 }
 
-/** One volume ramp at a time; starting another cancels the one in flight. */
+/** One volume ramp at a time; starting another cancels (and settles) the one in flight. */
 function ramp(player: AudioPlayer, from: number, to: number, ms: number): Promise<void> {
   cancelRamp();
   return new Promise((resolve) => {
@@ -63,10 +71,12 @@ function ramp(player: AudioPlayer, from: number, to: number, ms: number): Promis
       if (t >= 1) {
         clearInterval(id);
         if (rampTimer === id) rampTimer = null;
+        if (rampDone === resolve) rampDone = null;
         resolve();
       }
     }, RAMP_STEP_MS);
     rampTimer = id;
+    rampDone = resolve;
   });
 }
 

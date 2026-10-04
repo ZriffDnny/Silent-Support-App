@@ -50,7 +50,7 @@ export const CRISIS_RESOURCES: CrisisResource[] = [
 ];
 
 export const INTERNATIONAL_DIRECTORY: CrisisResource = {
-  name: 'Find a helpline',
+  name: 'Outside Malaysia?',
   description: 'Find a crisis helpline in any country.',
   actionLabel: 'Open findahelpline.com',
   action: { type: 'link', url: 'https://findahelpline.com' },

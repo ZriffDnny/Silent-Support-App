@@ -31,6 +31,26 @@ export function getCachedLogsSync(userId: string | null): LocalLog[] {
   return cache && cache.key === key ? cache.logs : [];
 }
 
+// Every read-modify-write of a history store runs through this queue, one at a
+// time, so a sync's merge can't overwrite a check-in saved alongside it. Only
+// on-device storage work is ever queued, never a network call.
+let queue: Promise<unknown> = Promise.resolve();
+function serial<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task, task);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
+// Bumped whenever history is cleared (Clear History, sign-out, account
+// deletion). A sync that started before a bump must not write its rows back.
+let generation = 0;
+export function historyGeneration(): number {
+  return generation;
+}
+export function bumpHistoryGeneration(): void {
+  generation += 1;
+}
+
 // Not security-sensitive — just a unique local row id.
 function uuidv4(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -40,16 +60,22 @@ function uuidv4(): string {
   });
 }
 
-async function readKey(key: string): Promise<LocalLog[]> {
+/** Reads a store without touching the in-memory mirror. Null if unreadable. */
+async function readRaw(key: string): Promise<LocalLog[] | null> {
   try {
     const raw = await AsyncStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : [];
-    const logs = Array.isArray(parsed) ? (parsed as LocalLog[]) : [];
-    setCache(key, logs);
-    return logs;
+    return Array.isArray(parsed) ? (parsed as LocalLog[]) : [];
   } catch {
-    return [];
+    return null;
   }
+}
+
+async function readKey(key: string): Promise<LocalLog[]> {
+  const logs = await readRaw(key);
+  if (!logs) return [];
+  setCache(key, logs);
+  return logs;
 }
 
 export async function getLocalLogs(userId: string | null): Promise<LocalLog[]> {
@@ -62,50 +88,137 @@ export async function appendLocalLog(
   createdAt?: string,
 ): Promise<LocalLog> {
   const log: LocalLog = { id: uuidv4(), emotion, createdAt: createdAt ?? new Date().toISOString() };
-  try {
-    const key = historyKey(userId);
-    const logs = await readKey(key);
-    logs.push(log);
-    await AsyncStorage.setItem(key, JSON.stringify(logs));
-    setCache(key, logs);
-  } catch {
-    // best-effort — never block the experience
-  }
+  await serial(async () => {
+    try {
+      const key = historyKey(userId);
+      const logs = await readKey(key);
+      logs.push(log);
+      await AsyncStorage.setItem(key, JSON.stringify(logs));
+      setCache(key, logs);
+    } catch {
+      // best-effort — never block the experience
+    }
+  });
   return log;
 }
 
-export async function writeLocalLogs(userId: string | null, logs: LocalLog[]): Promise<void> {
-  try {
-    const key = historyKey(userId);
-    await AsyncStorage.setItem(key, JSON.stringify(logs));
-    setCache(key, logs);
-  } catch {
-    // ignore
-  }
+/** Sync step 1: both stores as they are now, without moving the in-memory mirror. */
+export function readSyncSnapshot(userId: string): Promise<{ anon: LocalLog[]; cached: LocalLog[] }> {
+  return serial(async () => ({
+    anon: (await readRaw(ANON_KEY)) ?? [],
+    cached: (await readRaw(historyKey(userId))) ?? [],
+  }));
 }
 
-export async function clearLocalLogs(userId: string | null): Promise<void> {
-  try {
+function newestFirst(a: LocalLog, b: LocalLog): number {
+  const t = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  return t !== 0 ? t : a.id.localeCompare(b.id);
+}
+
+/**
+ * Sync: union `rows` into this user's store as it is NOW (not as it was when the
+ * sync started), so a check-in saved while the sync was on the network is kept.
+ * Writes nothing and returns false if history was cleared after `since`.
+ */
+export function mergeLocalLogs(userId: string, rows: LocalLog[], since: number): Promise<boolean> {
+  return serial(async () => {
+    if (generation !== since) return false;
     const key = historyKey(userId);
-    await AsyncStorage.removeItem(key);
-    setCache(key, []);
-  } catch {
-    // ignore
-  }
+    const current = await readRaw(key);
+    if (!current) return false;
+    const merged = new Map<string, LocalLog>();
+    for (const l of [...current, ...rows]) merged.set(l.id, l);
+    const logs = [...merged.values()].sort(newestFirst);
+    try {
+      await AsyncStorage.setItem(key, JSON.stringify(logs));
+    } catch {
+      return false;
+    }
+    setCache(key, logs);
+    return true;
+  });
+}
+
+/**
+ * Sync: these signed-out check-ins now live in the account, so drop them from
+ * the anon store. Unlike clearAnonLogs, this keeps the support-nudge cooldown
+ * (nothing was cleared) and leaves the in-memory mirror on the account.
+ */
+export function dropAnonLogs(ids: string[]): Promise<void> {
+  if (ids.length === 0) return Promise.resolve();
+  const drop = new Set(ids);
+  return serial(async () => {
+    const current = await readRaw(ANON_KEY);
+    if (!current) return;
+    const remaining = current.filter((l) => !drop.has(l.id));
+    try {
+      if (remaining.length === 0) await AsyncStorage.removeItem(ANON_KEY);
+      else await AsyncStorage.setItem(ANON_KEY, JSON.stringify(remaining));
+      if (cache?.key === ANON_KEY) setCache(ANON_KEY, remaining);
+    } catch {
+      // best-effort; folded rows are deduped by id on the next sync
+    }
+  });
+}
+
+/** Signed-in Clear History: every check-in id on this phone right now (null if unreadable). */
+export function snapshotLocalIds(userId: string): Promise<string[] | null> {
+  return serial(async () => {
+    const own = await readRaw(historyKey(userId));
+    const anon = await readRaw(ANON_KEY);
+    if (!own || !anon) return null;
+    return [...own, ...anon].map((l) => l.id);
+  });
+}
+
+/**
+ * Signed-in Clear History succeeded on the server: remove exactly these
+ * check-ins from the phone. A check-in saved after the clear began is kept.
+ */
+export async function removeLocalLogs(userId: string, ids: string[]): Promise<void> {
+  const drop = new Set(ids);
+  generation += 1;
+  await serial(async () => {
+    // Anon store first, so the in-memory mirror ends on the account.
+    for (const key of [ANON_KEY, historyKey(userId)]) {
+      try {
+        const remaining = ((await readRaw(key)) ?? []).filter((l) => !drop.has(l.id));
+        if (remaining.length === 0) await AsyncStorage.removeItem(key);
+        else await AsyncStorage.setItem(key, JSON.stringify(remaining));
+        if (key !== ANON_KEY || cache?.key === ANON_KEY) setCache(key, remaining);
+      } catch {
+        // ignore
+      }
+    }
+  });
   // The support-nudge cooldown is derived from history, so clear it too.
   void clearSupportPrompt();
 }
 
-export async function getAnonLogs(): Promise<LocalLog[]> {
-  return readKey(ANON_KEY);
+export async function clearLocalLogs(userId: string | null): Promise<void> {
+  // A sync that started before this clear must not write its rows back.
+  generation += 1;
+  await serial(async () => {
+    try {
+      const key = historyKey(userId);
+      await AsyncStorage.removeItem(key);
+      setCache(key, []);
+    } catch {
+      // ignore
+    }
+  });
+  // The support-nudge cooldown is derived from history, so clear it too.
+  void clearSupportPrompt();
 }
 
 export async function clearAnonLogs(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(ANON_KEY);
-    setCache(ANON_KEY, []);
-  } catch {
-    // ignore
-  }
+  await serial(async () => {
+    try {
+      await AsyncStorage.removeItem(ANON_KEY);
+      setCache(ANON_KEY, []);
+    } catch {
+      // ignore
+    }
+  });
   void clearSupportPrompt();
 }
