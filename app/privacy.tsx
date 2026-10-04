@@ -85,12 +85,14 @@ export default function PrivacyScreen() {
         <H>Signed out vs signed in</H>
         <Bullet>
           <Text style={styles.strong}>Signed out:</Text> no check-ins or account are stored on our
-          servers, and your history stays on your device. To write a response, the emotion you tap and a
-          support number from 1 to 3 are sent to our AI service in the moment. We don’t save them.
+          servers, and your history stays on your device. On Android, it isn’t included in your phone’s
+          backups and doesn’t move to a new phone on its own. To write a response, the emotion you tap
+          and a support number from 1 to 3 are sent to our AI service in the moment. We don’t save them.
         </Bullet>
         <Bullet>
           <Text style={styles.strong}>Signed in:</Text> your check-ins are backed up to your private
-          account, so they’re safe if you lose or change your phone.
+          account, so they’re safe if you lose or change your phone. On a new phone, sign in to bring
+          them back.
         </Bullet>
 
         <H>The services we rely on</H>

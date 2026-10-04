@@ -66,6 +66,8 @@ Set this to match `app/privacy.tsx` exactly — under-claiming is safer than ove
       record an IP-derived city.
 - [ ] Not used for third-party advertising or developer marketing.
 - [ ] "Data is deletable" → YES (account deletion + clear history).
+- [ ] **iOS backups:** before any iOS release, exclude the app's local storage from iCloud backup (or
+      reword the Privacy screen); today only Android is configured (see the Data Safety section).
 
 ## Data Safety checklist (Google Play)
 
@@ -81,6 +83,10 @@ Set this to match `app/privacy.tsx` exactly — under-claiming is safer than ove
       30-day troubleshooting/abuse logs make that a judgment call.
 - [ ] **Approximate location: decide.** Google says IP-inferred location must be disclosed. The app
       never infers location, but Supabase's request logs record a city.
+- [ ] **Android backup:** off for all app data (`allowBackup=false` plus data-extraction rules, via
+      `plugins/withNoAndroidBackup.js`). Signed-out history isn't included in Google backups or
+      phone-to-phone transfers; account check-ins come back by signing in. Re-verify with Android's
+      `bmgr` test scripts after any native config change.
 - [ ] **Is data encrypted in transit?** Yes (HTTPS).
 - [ ] **Can users request deletion?** Yes — in-app (Settings → Account → Delete account) and via a
       stated request method.
