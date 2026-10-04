@@ -87,7 +87,9 @@ export default function HistoryScreen() {
 
   const signOut = async () => {
     const uid = userId;
-    const { error } = await supabase.auth.signOut();
+    // This phone only. The default (global) scope would also end the account's
+    // sessions on every other phone it's signed in on.
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) {
       Alert.alert('Couldn’t sign out', 'We couldn’t sign you out just now. Try again in a moment.');
       return;

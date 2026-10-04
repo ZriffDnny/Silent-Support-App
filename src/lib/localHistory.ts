@@ -211,6 +211,35 @@ export async function clearLocalLogs(userId: string | null): Promise<void> {
   void clearSupportPrompt();
 }
 
+// A per-account store's key ends in the account id (a uuid); ANON_KEY never matches.
+const ACCOUNT_KEY = /^silentsupport\.history\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * An account's history stays on this phone only while that account is signed
+ * in here. Removes every account's copy except `keepUserId`'s (null: all of
+ * them), e.g. after the session ended without a sign-out on this phone (account
+ * deleted on another phone, session revoked). Signed-out check-ins are kept.
+ */
+export async function dropAccountCaches(keepUserId: string | null): Promise<void> {
+  // A sync that started before this must not write its rows back.
+  generation += 1;
+  let dropped = false;
+  await serial(async () => {
+    try {
+      const keep = keepUserId ? historyKey(keepUserId) : null;
+      const keys = (await AsyncStorage.getAllKeys()).filter((k) => ACCOUNT_KEY.test(k) && k !== keep);
+      if (keys.length === 0) return;
+      await AsyncStorage.multiRemove(keys);
+      if (cache && keys.includes(cache.key)) setCache(cache.key, []);
+      dropped = true;
+    } catch {
+      // best-effort; tried again at the next start or sign-out
+    }
+  });
+  // The support-nudge cooldown is derived from history, so clear it too.
+  if (dropped) void clearSupportPrompt();
+}
+
 export async function clearAnonLogs(): Promise<void> {
   await serial(async () => {
     try {

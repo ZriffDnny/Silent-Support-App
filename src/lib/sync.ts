@@ -1,3 +1,4 @@
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import {
   readSyncSnapshot,
@@ -7,6 +8,7 @@ import {
   bumpHistoryGeneration,
   snapshotLocalIds,
   removeLocalLogs,
+  clearLocalLogs,
   type LocalLog,
 } from './localHistory';
 import type { EmotionId } from '../emotions/catalog';
@@ -32,6 +34,16 @@ let clearInFlight: Promise<boolean> | null = null;
 export async function syncOnSignIn(userId: string): Promise<void> {
   if (clearInFlight) return;
   try {
+    // 0. Only the auth server can say whether this phone's session still holds.
+    //    Offline (or on a server hiccup) carry on as before; a deleted account or
+    //    an ended session stops here, before anything is uploaded or merged.
+    const { data: auth, error: authError } = await supabase.auth.getUser();
+    if (authError?.code === 'user_not_found') {
+      await endDeletedAccount(userId);
+      return;
+    }
+    if (auth.user?.id !== userId && !isAuthRetryableFetchError(authError)) return;
+
     // A clear, sign-out or account deletion after this point makes the rows
     // gathered below stale, and step 4 then writes nothing.
     const since = historyGeneration();
@@ -78,6 +90,14 @@ export async function syncOnSignIn(userId: string): Promise<void> {
   } catch {
     // best-effort; the local cache remains intact and usable offline
   }
+}
+
+// The account was deleted on another phone. Drop this phone's copy first, so no
+// sync can merge or upload it again, then end the session here. Signed-out
+// check-ins stay.
+async function endDeletedAccount(userId: string): Promise<void> {
+  await clearLocalLogs(userId);
+  await supabase.auth.signOut({ scope: 'local' });
 }
 
 /** Append-only: best-effort single insert for a new signed-in check-in. */

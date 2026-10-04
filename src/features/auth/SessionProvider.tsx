@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { syncOnSignIn } from '../../lib/sync';
+import { dropAccountCaches } from '../../lib/localHistory';
 
 type SessionState = {
   session: Session | null;
@@ -31,11 +32,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const userId = session?.user?.id ?? null;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data, error }) => {
+      // Drop any account copy left by a session that ended while the app was
+      // closed. Not on an error: it may only mean offline (a definitive failure
+      // also sends SIGNED_OUT, handled below).
+      if (!error) await dropAccountCaches(data.session?.user?.id ?? null);
       setSession(data.session);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      // SIGNED_OUT is definitive (never sent for a network failure): signed out
+      // here, or the server ended the session, e.g. the account was deleted on
+      // another phone. Signed-out check-ins stay.
+      if (event === 'SIGNED_OUT') void dropAccountCaches(null);
+      setSession(s);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
