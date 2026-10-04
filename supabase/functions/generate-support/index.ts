@@ -17,7 +17,7 @@
 // and falls back to curated on any violation.
 
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
-const GROQ_MODEL = Deno.env.get('GROQ_MODEL') ?? 'llama-3.3-70b-versatile';
+const GROQ_MODEL = Deno.env.get('GROQ_MODEL') ?? 'openai/gpt-oss-120b';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const AI_TIMEOUT_MS = 4000;
 
