@@ -185,7 +185,10 @@ async function askGroq(emotionId: string, strength: number): Promise<string | nu
       body: JSON.stringify({
         model: GROQ_MODEL,
         temperature: 0.7,
-        max_tokens: 220,
+        // GPT-OSS reasons before answering and that reasoning spends this budget too;
+        // the prompt and sanitizeAi's 800-char cap still keep the visible reply short.
+        reasoning_effort: 'low',
+        max_completion_tokens: 500,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           ...FEWSHOT,
@@ -196,7 +199,10 @@ async function askGroq(emotionId: string, strength: number): Promise<string | nu
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const text: string | undefined = data?.choices?.[0]?.message?.content;
+    const choice = data?.choices?.[0];
+    // Ran out of budget mid-reply: never show a cut-off response, let curated stand.
+    if (choice?.finish_reason === 'length') return null;
+    const text: string | undefined = choice?.message?.content;
     return text ?? null;
   } catch (_err) {
     return null;
