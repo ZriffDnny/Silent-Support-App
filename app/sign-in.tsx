@@ -11,13 +11,37 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useNavigationContainerRef, useRouter } from 'expo-router';
 import { supabase } from '../src/lib/supabase';
+import { ACCOUNTS_ENABLED } from '../src/lib/features';
 import { theme } from '../src/theme';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-export default function SignInScreen() {
+// With accounts off, anything that lands here (including the
+// silentsupport://sign-in link) goes straight back to Home.
+export default function SignInRoute() {
+  return ACCOUNTS_ENABLED ? <SignInScreen /> : <BackHome />;
+}
+
+function BackHome() {
+  const router = useRouter();
+  const navigation = useNavigationContainerRef();
+  useEffect(() => {
+    // Pops back to the Home underneath, or swaps this screen for Home when the
+    // link opened the app here. Never `replace`, which would stack a second Home.
+    const goHome = () => router.dismissTo('/');
+    if (navigation.isReady()) {
+      goHome();
+      return;
+    }
+    // Cold start from the link: the router can't navigate until it's ready.
+    return navigation.addListener('ready', goHome);
+  }, [navigation, router]);
+  return null;
+}
+
+function SignInScreen() {
   const router = useRouter();
   const [phase, setPhase] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');

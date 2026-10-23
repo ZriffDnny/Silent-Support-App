@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../src/theme';
@@ -17,6 +17,7 @@ import { startAmbient, stopAmbient } from '../src/features/comfort/audio';
 
 export default function ComfortScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { scale, phase } = useBreathing();
 
   // "Stay in silence": one tap strips all words away, leaving only the breath.
@@ -89,9 +90,11 @@ export default function ComfortScreen() {
         <View style={styles.grounding}>{!silent && <GroundingLine />}</View>
       </Pressable>
 
-      {/* Always-available, barely-there exit. Fades further in silence but stays tappable. */}
+      {/* Always-available, barely-there exit. Fades further in silence but stays tappable.
+          Absolute positioning ignores the SafeAreaView padding, so it adds the top inset
+          itself to stay clear of the status bar. */}
       <Pressable
-        style={[styles.done, silent && styles.doneSilent]}
+        style={[styles.done, { top: insets.top + 8 }, silent && styles.doneSilent]}
         onPress={() => router.dismissTo('/')}
         accessibilityLabel="Leave comfort mode"
         hitSlop={16}
@@ -130,7 +133,6 @@ const styles = StyleSheet.create({
   },
   done: {
     position: 'absolute',
-    top: 8,
     right: 8,
     paddingVertical: 14,
     paddingHorizontal: 18,

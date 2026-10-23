@@ -8,6 +8,7 @@ import { getLocalLogs, clearLocalLogs, type LocalLog } from '../src/lib/localHis
 import { clearAccountHistory } from '../src/lib/sync';
 import { useSession } from '../src/features/auth/SessionProvider';
 import { supabase } from '../src/lib/supabase';
+import { ACCOUNTS_ENABLED } from '../src/lib/features';
 import { buildInsights, countByEmotion, recentLogs } from '../src/features/history/insights';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -151,7 +152,7 @@ export default function HistoryScreen() {
         <Text style={styles.subtitle}>A gentle record of how you’ve felt.</Text>
 
         {/* Backup nudge — only signed-out, only when there's something to protect */}
-        {!loading && !userId && logs.length > 0 && (
+        {ACCOUNTS_ENABLED && !loading && !userId && logs.length > 0 && (
           <View style={styles.banner}>
             <Text style={styles.bannerText}>Your check-ins are saved only on this phone.</Text>
             <Pressable onPress={() => router.push('/sign-in')} hitSlop={8}>
@@ -172,7 +173,7 @@ export default function HistoryScreen() {
             <Text style={styles.emptyHint}>
               Whenever you tap how you feel, it’ll quietly appear here, just for you.
             </Text>
-            {!userId && (
+            {ACCOUNTS_ENABLED && !userId && (
               <Pressable onPress={() => router.push('/sign-in')} hitSlop={10} style={styles.emptySignIn}>
                 <Text style={styles.signInLink}>Have an account? Sign in to bring your check-ins back.</Text>
               </Pressable>
@@ -257,8 +258,9 @@ export default function HistoryScreen() {
           </>
         )}
 
-        {/* Account controls — hidden until auth resolves to avoid a flash */}
-        {!loading && (
+        {/* Account controls — hidden until auth resolves to avoid a flash. With
+            accounts off, only a phone that is already signed in shows them. */}
+        {!loading && (userId || ACCOUNTS_ENABLED) && (
           <View style={styles.account}>
             {userId ? (
               <>

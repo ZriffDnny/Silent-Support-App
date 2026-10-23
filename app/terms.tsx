@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { theme } from '../src/theme';
+import { ACCOUNTS_ENABLED } from '../src/lib/features';
 
 const SUPPORT_EMAIL = 'zariffdanial1@gmail.com';
 
@@ -34,7 +35,7 @@ export default function TermsScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Terms of Use</Text>
-        <Text style={styles.updated}>Last updated: 2 June 2026</Text>
+        <Text style={styles.updated}>Last updated: 4 October 2026</Text>
 
         <P>A few simple things about using Silent Support. No fine print, just what’s fair.</P>
 
@@ -50,23 +51,39 @@ export default function TermsScreen() {
           Treat the helplines in the <Text style={styles.strong}>Help</Text> section with care. They
           are real services, answered by real people.
         </Bullet>
-        <Bullet>Don’t try to break, overload, or spam the app or its sign-in system.</Bullet>
+        <Bullet>
+          Don’t try to break, overload, or spam the app or{' '}
+          {ACCOUNTS_ENABLED ? 'its sign-in system.' : 'the services behind it.'}
+        </Bullet>
         <Bullet>Don’t use it to harm yourself or others, or for anything illegal.</Bullet>
         <P>That’s really all we ask.</P>
 
-        <H>Your account</H>
-        <P>
-          If you create an account, you’re responsible for the email you sign in with. Keep access to
-          that inbox safe, since anyone who can read your sign-in codes can reach your account. There
-          are no passwords to manage; the code in your email is the key.
-        </P>
+        {ACCOUNTS_ENABLED && (
+          <>
+            <H>Your account</H>
+            <P>
+              If you create an account, you’re responsible for the email you sign in with. Keep access to
+              that inbox safe, since anyone who can read your sign-in codes can reach your account. There
+              are no passwords to manage; the code in your email is the key.
+            </P>
+          </>
+        )}
 
         <H>Your check-ins are yours</H>
-        <P>
-          The emotions you log belong to you. We don’t claim them, sell them, or use them for anything
-          beyond showing them back to you. You can delete your account and check-ins anytime in
-          Settings, under Account.
-        </P>
+        {ACCOUNTS_ENABLED ? (
+          <P>
+            The emotions you log belong to you. We don’t claim them, sell them, or use them for anything
+            beyond showing them back to you. You can delete your account and check-ins anytime in
+            Settings, under Account.
+          </P>
+        ) : (
+          <P>
+            The emotions you log belong to you. They’re kept only on your phone, and we don’t claim them,
+            sell them, or use them for anything beyond showing them back to you. You can clear them
+            anytime in History. We don’t hold a copy, so if the app is removed or your phone is lost,
+            they can’t be recovered.
+          </P>
+        )}
 
         <H>The app is offered “as is”</H>
         <P>
@@ -87,9 +104,11 @@ export default function TermsScreen() {
 
         <H>If things go wrong</H>
         <P>
-          If an account is used to abuse the app, spam the system, or harm others, we may have to remove
-          it. We’d much rather not, since this is a space meant to be gentle, but we’ll act when we
-          need to, to keep it safe for everyone.
+          {ACCOUNTS_ENABLED
+            ? 'If an account is used to abuse the app, spam the system, or harm others, we may have to remove it.'
+            : 'If the app is used to abuse its services, spam the system, or harm others, we may have to block that use.'}{' '}
+          We’d much rather not, since this is a space meant to be gentle, but we’ll act when we need to,
+          to keep it safe for everyone.
         </P>
 
         <H>Questions</H>

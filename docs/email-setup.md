@@ -1,8 +1,11 @@
 # Email / OTP delivery (production setup)
 
-Status: **deferred for beta.** During the closed beta we use the free SendGrid
-single-sender setup (sends from a Gmail address, so codes sometimes land in
-spam). This doc is the plan for production-grade delivery when going public.
+Status: **parked (2026-10-04).** The public release has no accounts
+(`ACCOUNTS_ENABLED = false` in `src/lib/features.ts`) and must cost RM0, so no
+email provider, SMTP setup, or domain is used. The old SendGrid single-sender
+setup no longer sends (SendGrid's free plan has ended; new accounts only get a
+60-day trial), and the provider facts below are from before that. Re-check
+everything here before switching accounts back on.
 
 ## The core point
 

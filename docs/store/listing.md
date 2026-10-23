@@ -55,9 +55,8 @@ WHY IT FEELS DIFFERENT
 
 PRIVATE BY DESIGN
 • No ads. No tracking. No analytics. Ever.
-• Works without an account — your check-ins are stored only on your phone.
-• Optional free backup with just your email and a sign-in code (no passwords).
-• Your check-ins are yours alone, locked to your account, and deletable anytime.
+• No account, no sign-up, no email — your check-ins are stored only on your phone.
+• Your check-ins are yours alone, and you can clear them anytime. There's no cloud copy, so uninstalling the app or losing your phone erases them for good.
 • To write a response, only the emotion you tapped and a coarse 1–3 sense of how much support to offer are sent to our AI service, through our server. Your history, counts, dates, identity, and the reason behind a feeling are never sent to it.
 • Silent Support never knows why you chose an emotion.
 
@@ -96,21 +95,19 @@ mood,feelings,emotions,check-in,calm,breathe,journal,diary,selfcare,mindful,priv
 
 Accurate claims (consistent with `app/privacy.tsx`):
 - No advertising, tracking, or analytics SDKs (verified — none in the codebase).
-- Signed out: check-ins are stored only on the device; no check-ins or account are stored on our
-  servers.
-- Signed in (optional): the email and the check-ins (emotion + time) are stored in the account for
-  backup and sync. Account data is owner-locked at the database level and fully deletable in-app
-  (email + one-time code, no passwords).
-- Every user, signed in or not: the tapped emotion + a coarse 1–3 support level are sent through our
-  server to the AI provider (Groq) to generate a response. Our code doesn't store them. Groq says it
-  doesn't retain them by default but may keep them up to 30 days for troubleshooting or abuse checks.
-  No history, identity, or reason is sent.
+- No account and no email: the public build has no sign-up or sign-in (`ACCOUNTS_ENABLED = false`).
+- Check-ins are stored only on the device; no check-ins, accounts, or emails are stored on our
+  servers. There's no backup, so uninstalling the app or losing the phone erases the history.
+- Every user: the tapped emotion + a coarse 1–3 support level are sent through our server to the AI
+  provider (Groq) to generate a response. Our code doesn't store them. Groq says it doesn't retain
+  them by default but may keep them up to 30 days for troubleshooting or abuse checks. No history,
+  identity, or reason is sent.
 - Emotional data is never sold, shared for advertising, or used to profile.
 
 **Do NOT claim:** "fully offline", "nothing ever leaves your device", "never stored anywhere", or "no
-data collected" without qualification (an account collects email + check-ins for functionality, the AI
-call transmits the tapped emotion + the 1–3 level, and the services log network metadata such as IP
-addresses). See the Privacy Label / Data Safety checklists for the exact label setup.
+data collected" without qualification (the AI call transmits the tapped emotion + the 1–3 level, and
+the services log network metadata such as IP addresses). Don't advertise backup or sync while accounts
+are switched off. See the Privacy Label / Data Safety checklists for the exact label setup.
 
 ## Competitive positioning
 
@@ -125,5 +122,5 @@ addresses). See the Privacy Label / Data Safety checklists for the exact label s
 
 **Three differentiators to repeat everywhere:**
 1. Lowest possible friction — one tap, no account, no journaling.
-2. Genuinely private — local-first, no tracking/ads/analytics, account optional, fully deletable.
+2. Genuinely private — local-first, no tracking/ads/analytics, no account, clearable anytime.
 3. Calm, not clinical — comfort and presence, never diagnosis, coaching, or gamified pressure.

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { theme } from '../src/theme';
+import { ACCOUNTS_ENABLED } from '../src/lib/features';
 
 // Support / questions inbox.
 const SUPPORT_EMAIL = 'zariffdanial1@gmail.com';
@@ -51,22 +52,41 @@ export default function PrivacyScreen() {
 
         <H>What we store</H>
         <P>We keep this as small as possible.</P>
-        <Bullet>
-          <Text style={styles.strong}>Your check-ins.</Text> The emotion you tap, and when. When you’re
-          signed out, these are stored only on your device. (To write a response, the emotion you tapped
-          and a support number from 1 to 3 pass through our server to our AI service in the moment. We
-          don’t save them; see “The services we rely on”.)
-        </Bullet>
-        <Bullet>
-          <Text style={styles.strong}>Your email.</Text> Only if you choose to sign in. Asking for a
-          sign-in code creates your account, even if you don’t finish signing in. We use your email to
-          send that code and to back up your check-ins. There are no passwords.
-        </Bullet>
-        <P>We don’t ask for your name, age, location, contacts, or anything else.</P>
+        {ACCOUNTS_ENABLED ? (
+          <>
+            <Bullet>
+              <Text style={styles.strong}>Your check-ins.</Text> The emotion you tap, and when. When you’re
+              signed out, these are stored only on your device. (To write a response, the emotion you tapped
+              and a support number from 1 to 3 pass through our server to our AI service in the moment. We
+              don’t save them; see “The services we rely on”.)
+            </Bullet>
+            <Bullet>
+              <Text style={styles.strong}>Your email.</Text> Only if you choose to sign in. Asking for a
+              sign-in code creates your account, even if you don’t finish signing in. We use your email to
+              send that code and to back up your check-ins. There are no passwords.
+            </Bullet>
+            <P>We don’t ask for your name, age, location, contacts, or anything else.</P>
+          </>
+        ) : (
+          <>
+            <Bullet>
+              <Text style={styles.strong}>Your check-ins.</Text> The emotion you tap, and when. They’re
+              stored only on your device. (To write a response, the emotion you tapped and a support number
+              from 1 to 3 pass through our server to our AI service in the moment. We don’t save them; see
+              “The services we rely on”.)
+            </Bullet>
+            <P>
+              There’s no account to create. We don’t ask for your name, email, age, location, contacts, or
+              anything else.
+            </P>
+          </>
+        )}
 
         <H>How we use it</H>
         <Bullet>To show your history, so you can look back gently.</Bullet>
-        <Bullet>To keep it safe across your devices, only when you’re signed in.</Bullet>
+        {ACCOUNTS_ENABLED && (
+          <Bullet>To keep it safe across your devices, only when you’re signed in.</Bullet>
+        )}
         <P>We never use it to profile you or build a picture of who you are.</P>
         <P>Silent Support never knows why you chose an emotion.</P>
 
@@ -82,31 +102,60 @@ export default function PrivacyScreen() {
           monitoring.
         </P>
 
-        <H>Signed out vs signed in</H>
-        <Bullet>
-          <Text style={styles.strong}>Signed out:</Text> no check-ins or account are stored on our
-          servers, and your history stays on your device. On Android, it isn’t included in your phone’s
-          backups and doesn’t move to a new phone on its own. To write a response, the emotion you tap
-          and a support number from 1 to 3 are sent to our AI service in the moment. We don’t save them.
-        </Bullet>
-        <Bullet>
-          <Text style={styles.strong}>Signed in:</Text> your check-ins are backed up to your private
-          account, so they’re safe if you lose or change your phone. On a new phone, sign in to bring
-          them back.
-        </Bullet>
+        {ACCOUNTS_ENABLED ? (
+          <>
+            <H>Signed out vs signed in</H>
+            <Bullet>
+              <Text style={styles.strong}>Signed out:</Text> no check-ins or account are stored on our
+              servers, and your history stays on your device. On Android, it isn’t included in your phone’s
+              backups and doesn’t move to a new phone on its own. To write a response, the emotion you tap
+              and a support number from 1 to 3 are sent to our AI service in the moment. We don’t save them.
+            </Bullet>
+            <Bullet>
+              <Text style={styles.strong}>Signed in:</Text> your check-ins are backed up to your private
+              account, so they’re safe if you lose or change your phone. On a new phone, sign in to bring
+              them back.
+            </Bullet>
+          </>
+        ) : (
+          <>
+            <H>Your history stays on your phone</H>
+            <P>
+              Your history is saved only on this device, never on our servers. On Android, it also isn’t
+              included in your phone’s backups and doesn’t move to a new phone on its own.
+            </P>
+            <P>
+              Because of that, uninstalling the app, clearing its data, or losing or resetting your phone
+              can erase your history for good. We don’t have a copy, so we can’t bring it back.
+            </P>
+            <P>
+              To write a response, the emotion you tap and a support number from 1 to 3 are sent to our AI
+              service in the moment. We don’t save them.
+            </P>
+          </>
+        )}
 
         <H>The services we rely on</H>
         <P>We’re a small app and use a few trusted services to run:</P>
-        <Bullet>
-          <Text style={styles.strong}>Supabase.</Text> Handles sign-in, stores signed-in users’
-          check-ins in a secure database hosted in Japan, and runs the small server step that passes the
-          emotion you tap, and its support number, on to Groq without saving them. Each person’s
-          check-ins are locked to their own account.
-        </Bullet>
-        <Bullet>
-          <Text style={styles.strong}>SendGrid.</Text> Sends your sign-in code by email. It receives
-          only your email address and the code, and keeps delivery records under its own policy.
-        </Bullet>
+        {ACCOUNTS_ENABLED ? (
+          <>
+            <Bullet>
+              <Text style={styles.strong}>Supabase.</Text> Handles sign-in, stores signed-in users’
+              check-ins in a secure database hosted in Japan, and runs the small server step that passes the
+              emotion you tap, and its support number, on to Groq without saving them. Each person’s
+              check-ins are locked to their own account.
+            </Bullet>
+            <Bullet>
+              <Text style={styles.strong}>SendGrid.</Text> Sends your sign-in code by email. It receives
+              only your email address and the code, and keeps delivery records under its own policy.
+            </Bullet>
+          </>
+        ) : (
+          <Bullet>
+            <Text style={styles.strong}>Supabase.</Text> Runs the small server step that passes the emotion
+            you tap, and its support number, on to Groq without saving them.
+          </Bullet>
+        )}
         <Bullet>
           <Text style={styles.strong}>Groq.</Text> Writes some supportive responses using AI. Our
           server sends Groq the emotion you tapped and a support number from 1 to 3 that hints how much
@@ -128,46 +177,71 @@ export default function PrivacyScreen() {
           build a picture of you.
         </P>
 
-        <H>Your data is yours, and locked to you</H>
-        <P>
-          For signed-in users, every check-in is tied to your account. Rules in the database itself, not
-          just in the app, stop other users and anyone who isn’t signed in as you from reaching it. As
-          the app’s maker we have administrator access to run the service, but we don’t read your
-          check-ins; they’re simply kept for you.
-        </P>
+        {ACCOUNTS_ENABLED && (
+          <>
+            <H>Your data is yours, and locked to you</H>
+            <P>
+              For signed-in users, every check-in is tied to your account. Rules in the database itself, not
+              just in the app, stop other users and anyone who isn’t signed in as you from reaching it. As
+              the app’s maker we have administrator access to run the service, but we don’t read your
+              check-ins; they’re simply kept for you.
+            </P>
+          </>
+        )}
 
         <H>Deleting your data</H>
-        <Bullet>
-          <Text style={styles.strong}>Signed out:</Text> clearing your history in the app removes those
-          check-ins from your device.
-        </Bullet>
-        <Bullet>
-          <Text style={styles.strong}>Signed in:</Text> clearing your history removes your check-ins
-          from your account and this phone. To remove everything, go to Settings, then Account, and tap
-          Delete account. This permanently removes your account and every backed-up check-in right
-          away, and clears them from this device. It can’t be undone. (Signing out instead just clears
-          this device and keeps your check-ins safe in your account.)
-        </Bullet>
-        <Bullet>
-          <Text style={styles.strong}>Started signing in but didn’t finish?</Text> An account may still
-          have been created for that email. Sign in once and tap Delete account, or email us and we’ll
-          remove it.
-        </Bullet>
+        {ACCOUNTS_ENABLED ? (
+          <>
+            <Bullet>
+              <Text style={styles.strong}>Signed out:</Text> clearing your history in the app removes those
+              check-ins from your device.
+            </Bullet>
+            <Bullet>
+              <Text style={styles.strong}>Signed in:</Text> clearing your history removes your check-ins
+              from your account and this phone. To remove everything, go to Settings, then Account, and tap
+              Delete account. This permanently removes your account and every backed-up check-in right
+              away, and clears them from this device. It can’t be undone. (Signing out instead just clears
+              this device and keeps your check-ins safe in your account.)
+            </Bullet>
+            <Bullet>
+              <Text style={styles.strong}>Started signing in but didn’t finish?</Text> An account may still
+              have been created for that email. Sign in once and tap Delete account, or email us and we’ll
+              remove it.
+            </Bullet>
+          </>
+        ) : (
+          <P>
+            In History, tap Clear history on this device to remove every check-in from your phone.
+            Uninstalling the app removes them too.
+          </P>
+        )}
 
         <H>How long we keep things</H>
-        <Bullet>
-          Your check-ins stay until you delete them. We don’t auto-expire them or archive them
-          elsewhere.
-        </Bullet>
-        <Bullet>
-          When you clear your history while signed in, we keep only a random ID for each cleared
-          check-in (never how you felt or when), so an older copy can’t bring it back. These IDs are
-          removed when you delete your account.
-        </Bullet>
-        <Bullet>Deleting your account removes your account and every backed-up check-in.</Bullet>
+        {ACCOUNTS_ENABLED ? (
+          <>
+            <Bullet>
+              Your check-ins stay until you delete them. We don’t auto-expire them or archive them
+              elsewhere.
+            </Bullet>
+            <Bullet>
+              When you clear your history while signed in, we keep only a random ID for each cleared
+              check-in (never how you felt or when), so an older copy can’t bring it back. These IDs are
+              removed when you delete your account.
+            </Bullet>
+            <Bullet>Deleting your account removes your account and every backed-up check-in.</Bullet>
+          </>
+        ) : (
+          <Bullet>
+            Your check-ins stay on your phone until you clear them or remove the app. We don’t
+            auto-expire them or keep a copy anywhere else.
+          </Bullet>
+        )}
         <Bullet>
           The services we rely on may keep their own records for a time, under their own policies: for
-          example, of sign-in emails, logins, and requests to our AI service.
+          example,{' '}
+          {ACCOUNTS_ENABLED
+            ? 'of sign-in emails, logins, and requests to our AI service.'
+            : 'of requests to our AI service.'}
         </Bullet>
 
         <H>What we don’t do</H>

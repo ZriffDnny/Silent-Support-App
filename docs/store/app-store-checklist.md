@@ -4,6 +4,12 @@ Pre-launch checklists for both stores plus the privacy, data-safety, deletion, c
 verifications. Boxes are unchecked; tick as completed. Items marked **⚠ BLOCKER** must be resolved
 before a build can be submitted.
 
+> **Public no-account release (2026-10-04).** Accounts are switched off (`ACCOUNTS_ENABLED = false`
+> in `src/lib/features.ts`), and the release must cost RM0. Items marked **(accounts on only)** apply
+> only once sign-in and backup are switched back on. Store submission itself isn't free (Google Play
+> charges a US$25 one-time registration fee; Apple's developer program is a paid annual membership),
+> so the RM0 release is a direct APK download until that changes.
+
 ---
 
 ## App Store (Apple) submission checklist
@@ -20,10 +26,11 @@ before a build can be submitted.
 - [ ] Support URL and marketing URL set; support email reachable (`zariffdanial1@gmail.com`).
 - [ ] Privacy Policy URL reachable (host the `app/privacy.tsx` content publicly, or link in-app page).
 - [ ] App Privacy "nutrition label" completed (see Privacy Label checklist).
-- [ ] Sign-in demo: provide a test email + note that codes arrive by email (OTP). Reviewer guidance
-      explaining passwordless flow added to "Notes for Review".
-- [ ] Account deletion path documented in review notes (Settings → Account → Delete account) — Apple
-      requires in-app deletion for apps with account creation (see Account Deletion checklist).
+- [ ] **(accounts on only)** Sign-in demo: provide a test email + note that codes arrive by email
+      (OTP). Reviewer guidance explaining passwordless flow added to "Notes for Review".
+- [ ] **(accounts on only)** Account deletion path documented in review notes (Settings → Account →
+      Delete account) — Apple requires in-app deletion for apps with account creation (see Account
+      Deletion checklist).
 - [ ] Crisis/helpline content reviewed (see Crisis Resource checklist) — present in Help screen.
 - [ ] `EXPO_PUBLIC_*` env values point at production Supabase; only the publishable anon key shipped.
 - [ ] TestFlight build validated on a real device (icon, splash, fonts render in a real build).
@@ -42,8 +49,8 @@ before a build can be submitted.
 - [ ] **Data Safety** form completed (see Data Safety checklist).
 - [ ] Health apps declaration: confirm it is **not** a medical device / does not provide diagnosis
       or treatment (declare as general wellbeing).
-- [ ] Account deletion: provide the in-app path **and** a web deletion request URL/instructions
-      (Play requires a deletion route reachable outside the app too).
+- [ ] **(accounts on only)** Account deletion: provide the in-app path **and** a web deletion request
+      URL/instructions (Play requires a deletion route reachable outside the app too).
 - [ ] Target API level meets current Play requirement (verify against the Expo SDK build).
 - [ ] Closed/internal testing track validated before production.
 
@@ -52,11 +59,13 @@ before a build can be submitted.
 Set this to match `app/privacy.tsx` exactly — under-claiming is safer than over-claiming.
 
 - [ ] **Data used to track you:** NONE. (No ad/analytics SDKs — verified in code.)
-- [ ] **Data linked to you (App Functionality only), applies when a user creates an account:**
+- [ ] **Data linked to you — (accounts on only).** The public build has no accounts, so none of this
+      is collected:
   - [ ] Contact Info → **Email address** (sign-in + backup).
   - [ ] User Content → **the emotion check-ins** (the user's backup).
-- [ ] **Signed-out users:** no account or check-ins stored server-side (history is on-device). The
-      tapped emotion + a coarse 1–3 support level are still transmitted for the AI response.
+- [ ] **Public no-account build (all users):** no account, email, or check-ins stored server-side
+      (history is on-device only). The tapped emotion + a coarse 1–3 support level are still
+      transmitted for the AI response.
 - [ ] Disclose the AI processing: the tapped emotion + a coarse 1–3 support level are sent through our
       server to a third-party AI provider (Groq) for functionality, not linked to identity, and not
       stored by our code. Groq says it doesn't retain them by default but may keep them up to 30 days
@@ -72,28 +81,35 @@ Set this to match `app/privacy.tsx` exactly — under-claiming is safer than ove
 ## Data Safety checklist (Google Play)
 
 - [ ] **Does the app collect or share user data?** Collect: yes (Google: "Collect" means transmitting
-      data off the device). Share: no. Supabase, Groq and SendGrid process data on our behalf as
-      service providers, which Google doesn't count as "sharing".
-- [ ] Data types: **Personal info → Email address** (account) and the **emotion check-ins** (account
-      backup). Decide "Health info" vs "App activity → Other user-generated content"; Google's
-      definitions don't settle it. Purpose: **App functionality** only.
-- [ ] **All users, signed in or not:** the tapped emotion + a coarse 1–3 level are transmitted for the
-      AI reply. Our code processes them ephemerally. Include them in the form: Google hides
-      ephemerally processed data from the listing only if it meets its standard, and Groq's possible
-      30-day troubleshooting/abuse logs make that a judgment call.
+      data off the device). Share: no. Supabase and Groq process data on our behalf as service
+      providers, which Google doesn't count as "sharing".
+- [ ] Data types (public no-account build): **no email address** and **no stored check-ins** — the
+      only data that leaves the phone is the AI request below. Decide whether the tapped emotion is
+      "Health info" or "App activity → Other user-generated content"; Google's definitions don't
+      settle it. Purpose: **App functionality** only. **(accounts on only):** add **Personal info →
+      Email address** and the **emotion check-ins** (account backup).
+- [ ] **All users:** the tapped emotion + a coarse 1–3 level are transmitted for the AI reply. Our code
+      processes them ephemerally. Include them in the form: Google hides ephemerally processed data
+      from the listing only if it meets its standard, and Groq's possible 30-day troubleshooting/abuse
+      logs make that a judgment call.
 - [ ] **Approximate location: decide.** Google says IP-inferred location must be disclosed. The app
       never infers location, but Supabase's request logs record a city.
 - [ ] **Android backup:** off for all app data (`allowBackup=false` plus data-extraction rules, via
-      `plugins/withNoAndroidBackup.js`). Signed-out history isn't included in Google backups or
-      phone-to-phone transfers; account check-ins come back by signing in. Re-verify with Android's
-      `bmgr` test scripts after any native config change.
+      `plugins/withNoAndroidBackup.js`). History isn't included in Google backups or phone-to-phone
+      transfers, and with no accounts there's no way to restore it after uninstalling or on a new
+      phone (the Privacy screen and Terms say so). Re-verify with Android's `bmgr` test scripts after
+      any native config change.
 - [ ] **Is data encrypted in transit?** Yes (HTTPS).
-- [ ] **Can users request deletion?** Yes — in-app (Settings → Account → Delete account) and via a
-      stated request method.
+- [ ] **Can users request deletion?** Public build: nothing is stored on our servers to delete;
+      history is cleared in-app (History → Clear history on this device) or by uninstalling.
+      **(accounts on only):** in-app Settings → Account → Delete account, plus a stated request
+      method.
 - [ ] No data collected from children / not targeted at children.
 - [ ] Matches the in-app Privacy screen and the Apple label (keep all three in sync).
 
 ## Account deletion checklist
+
+**(accounts on only)** — the code below stays in place, dormant, while accounts are switched off.
 
 - [ ] In-app deletion present: **Settings → Account → Delete account** (`app/settings.tsx`).
 - [ ] Confirm dialog before deletion ("This cannot be undone") — present.
@@ -125,7 +141,9 @@ Source of truth: `src/features/safety/resources.ts` (region: **Malaysia** + inte
 
 ## SMTP / email (OTP) verification checklist
 
-Email is sent for passwordless sign-in via Supabase Auth using custom SMTP (SendGrid).
+**(accounts on only)** — parked; see `docs/email-setup.md`. Email would be sent for passwordless
+sign-in via Supabase Auth custom SMTP. No provider is chosen: the old SendGrid setup no longer sends,
+and the RM0 release uses no email provider.
 
 - [ ] Custom SMTP configured in Supabase Auth → SMTP settings (host, port, credentials).
 - [ ] Sender address verified with the email provider; **SPF + DKIM** records published for the domain.

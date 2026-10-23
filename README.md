@@ -119,9 +119,9 @@ This is an emotional mirror, **not** a health tracker — no charts, scores, dia
 
 Privacy is the product, not a setting.
 
-- **Local-first.** Your emotion history lives on your device. Signed out, no check-ins or account are stored on any server; to write a response, only the feeling you tapped and a 1-to-3 depth number pass through our server to the AI provider, and we don't keep them.
-- **Accounts are optional.** Create one only if you want to back up and sync across devices. Sign-in is a simple emailed code — no password, no magic link.
-- **You own your data.** Clear your history any time, or delete your account entirely (which erases your data from the server).
+- **Local-first.** Your emotion history lives only on your device, never on our servers. To write a response, only the feeling you tapped and a 1-to-3 depth number pass through our server to the AI provider, and we don't keep them.
+- **No account.** There's nothing to sign up for, and no email is asked for. Because there's no cloud copy, uninstalling the app or losing the phone erases the history for good. (Optional email sign-in with backup and sync is built but switched off — `ACCOUNTS_ENABLED` in `src/lib/features.ts` — until it can be offered at no cost.)
+- **You own your data.** Clear your history any time from the History screen.
 - **No tracking.** No third-party analytics SDKs.
 
 ---
@@ -159,7 +159,7 @@ A built-in **Help** screen links crisis resources (Malaysia plus an internationa
 - TypeScript (strict)
 
 ### Backend
-- Supabase — Auth (email OTP), Postgres + Row-Level Security, Edge Functions (Deno)
+- Supabase — Edge Functions (Deno) for the AI step; Auth (email OTP) and Postgres + Row-Level Security for the optional backup, which is switched off in the public release
 
 ### AI
 - Groq (OpenAI-compatible API), called from a Supabase Edge Function
@@ -183,7 +183,7 @@ Only:
 ✔ Emotional expression
 ✔ Instant grounding response (curated, with optional AI depth)
 ✔ Private, local-first emotional tracking
-✔ Optional account for backup & sync
+✔ No account needed (optional backup & sync is built but switched off)
 
 ---
 
@@ -198,4 +198,4 @@ without needing to explain why.
 
 ## 🚀 Status
 
-Active development — the core solo loop (tap → instant response → comfort mode), private history, optional accounts, and safety resources are in place.
+Active development — the core solo loop (tap → instant response → comfort mode), private on-device history, and safety resources are in place. Optional accounts (email sign-in, backup and sync) are built but switched off for the public no-account release.
